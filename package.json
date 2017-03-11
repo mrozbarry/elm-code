@@ -1,0 +1,22 @@
+{
+  "name": "elm-codes",
+  "version": "0.0.1",
+  "description": "Elm live web compiler",
+  "main": "lib/workers/worker.js",
+  "author": "Alex Barry",
+  "license": "MIT",
+  "scripts": {
+    "worker": "node lib/workers/worker.js"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^0.7.0",
+    "elm": "^0.18.0",
+    "extract-zip": "^1.6.0",
+    "firebase": "^3.7.0",
+    "firebase-admin": "^4.1.3",
+    "firebase-queue": "^1.6.1",
+    "node-elm-compiler": "^4.3.0",
+    "rimraf": "^2.6.1",
+    "temp": "^0.8.3"
+  }
+}
