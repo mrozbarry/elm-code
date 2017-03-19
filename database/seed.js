@@ -8,10 +8,15 @@ database
   .ref()
   .remove()
   .then(function () {
-    createStandardPackage(
-      require("./seed/standard/elm-package.json"),
-      database.ref("packages").push()
-    )
+    bucket.deleteFiles().then(function () {
+      createStandardPackage(
+        require("./seed/standard/elm-package.json"),
+        database.ref("packages").push()
+      )
+    }).catch(function (e) {
+      console.error(e)
+      process.exit(1)
+    })
   })
   .catch(function (e) {
     console.error(e)
@@ -42,12 +47,12 @@ function createStandardPackage (elmPackage, ref) {
         }
       ).then(function () {
         process.exit(0)
-      }).catch(function () {
-        console.error("Problem uploading Main.elm")
+      }).catch(function (e) {
+        console.error(e)
         process.exit(1)
       })
     }).catch(function (e) {
-      console.error("Problem uploading elm-package.json")
+      console.error(e)
       process.exit(1)
     })
   }).catch(function (e) {
