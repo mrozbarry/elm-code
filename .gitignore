@@ -1,3 +1,3 @@
 node_modules
-config/database.json
-config/serviceAccount.json
+config/services/firebase.json
+config/services/serviceAccount.json

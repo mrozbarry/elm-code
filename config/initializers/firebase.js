@@ -1,10 +1,27 @@
+const path = require("path")
+const storage = require("@google-cloud/storage")
+
 const firebase = require("firebase-admin")
-const config = require("../serviceAccount.json")
-const database = require("../database.json")
+const serviceAccount = require("../services/serviceAccount.json")
+const config = require("../services/firebase.json")
 
 const options = {
-  credential: firebase.credential.cert(config),
-  databaseURL: database.databaseURL
+  credential: firebase.credential.cert(serviceAccount),
+  databaseURL: config.databaseURL
 }
 
-module.exports = firebase.initializeApp(options)
+const app = firebase.initializeApp(options)
+
+const projectId = config.storageBucket.split(".appspot.com")[0]
+
+module.exports = {
+  config: config,
+  database: app.database,
+  storage: function () {
+    return storage({
+        projectId: projectId,
+        keyFilename: path.resolve(__dirname, "../services/serviceAccount.json")
+      })
+      .bucket(config.storageBucket)
+  }
+}

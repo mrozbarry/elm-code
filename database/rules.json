@@ -1,0 +1,218 @@
+{
+  "rules": {
+    "compile-queue": {
+      "tasks": {
+        ".read": "auth.canProcessTasks === true",
+        ".write": "auth.canAddTasks === true || auth.canProcessTasks === true",
+
+        ".indexOn": "_state",
+
+        "$taskId": {
+          ".validate": "(auth.canProcessTasks === true && newData.hasChildren(['_state', '_state_changed', '_progress']))",
+
+          "_state": {
+            ".validate": "newData.isString()"
+          },
+
+          "_state_changed": {
+            ".validate": "newData.isNumber() && (newData.val() === now || data.val() === newData.val())"
+          },
+
+          "_owner": {
+            ".validate": "newData.isString()"
+          },
+
+          "_progress": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+
+          "_error_details": {
+            "error": {
+              ".validate": "newData.isString()"
+            },
+
+            "error_stack": {
+              ".validate": "newData.isString()"
+            },
+
+            "previous_state": {
+              ".validate": "newData.isString()"
+            },
+
+            "original_task": {},
+
+            "attempts": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+
+            "$else": {
+              ".validate": false
+            }
+          },
+
+          "_id": {
+            ".validate": "newData.isString()"
+          },
+
+          "$else": {
+            ".validate": true
+          }
+        }
+      },
+
+      "specs": {
+        ".read": "auth.canAddSpecs === true || auth.canProcessTasks === true",
+        ".write": "auth.canAddSpecs === true",
+
+        "$specId": {
+          ".validate": "newData.hasChild('in_progress_state')",
+
+          "start_state": {
+            ".validate": "newData.isString()"
+          },
+
+          "in_progress_state": {
+            ".validate": "newData.isString()"
+          },
+
+          "finished_state": {
+            ".validate": "newData.isString()"
+          },
+
+          "error_state": {
+            ".validate": "newData.isString()"
+          },
+
+          "timeout": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          },
+
+          "retries": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          },
+
+          "$else": {
+            ".validate": false
+          }
+        }
+      }
+
+    },
+
+    "users": {
+      "$userId": {
+        ".read": true,
+        ".indexOn": ["createdAt", "isBanned", "snippetCount"],
+
+        "createdAt": {
+          ".write": "auth.uid == $userId",
+          ".validate": "newData.isNumber() && (newData.val() === now || data.val() == newData.val())"
+        },
+
+        "isBanned": {
+          ".write": "auth.token.isAdmin === true",
+          ".validate": "newData.isBoolean()"
+        },
+
+        "banReason": {
+          ".write": "auth.token.isAdmin === true",
+          ".validate": "newData.isString()"
+        },
+
+        "snippetCount": {
+          ".write": "auth.uid === $userId || auth.token.isAdmin === true",
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+
+        "$else": {
+          ".write": false,
+          ".validate": false
+        }
+
+      }
+    },
+
+    "snippets": {
+      "$snippetId": {
+        ".read": "data.child('isPublic').val() === true || data.child('userId').val() == auth.uid",
+        ".write": "data.val() == null || data.child('userId').val() == auth.uid",
+        ".indexOn": ["userId", "clonedFromId", "packageTemplate", "createdAt", "updatedAt"],
+
+        "userId": {
+          ".validate": "newData.isString()"
+        },
+
+        "clonedFromId": {
+          ".validate": "newData.isString()"
+        },
+
+        "packageId": {
+          ".validate": "newData.isString()"
+        },
+
+        "title": {
+          ".validate": "newData.isString()"
+        },
+
+        "attribution": {
+          ".validate": "newData.isString()"
+        },
+
+        "description": {
+          ".validate": "newData.isString()"
+        },
+
+        "compiledAt": {
+          ".validate": "newData.isNumber() && (newData.val() === now || data.val() == newData.val())"
+        },
+
+        "isPublic": {
+          ".validate": "newData.isBoolean()"
+        },
+
+        "createdAt": {
+          ".validate": "newData.isNumber() && (newData.val() === now || data.val() == newData.val())"
+        },
+
+        "updatedAt": {
+          ".validate": "newData.isNumber() && (newData.val() === now || data.val() == newData.val())"
+        },
+
+        "$else": {
+          ".validate": false
+        }
+      }
+    },
+
+    "packages": {
+      "$packageId": {
+        ".read": true,
+        ".write": "auth.token.isAdmin === true",
+
+        "name": {
+          ".validate": "newData.isString()"
+        },
+
+        "dependencies": {
+          ".validate": "newData.hasChildren()",
+
+          "$dependency": {
+            ".validate": "newData.isString()"
+          }
+        },
+
+        "flagged": {
+          ".validate": "newData.isBoolean()"
+        },
+
+        "createdAt": {
+          ".validate": "newData.isNumber() && (newData.val() === now || data.val() == newData.val())"
+        },
+
+        "updatedAt": {
+          ".validate": "newData.isNumber() && (newData.val() === now || data.val() == newData.val())"
+        }
+      }
+    }
+  }
+}
