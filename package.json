@@ -8,7 +8,7 @@
   "scripts": {
     "worker": "node lib/workers/worker.js",
     "db:seed": "node database/seed.js",
-    "start": "./node_modules/node-static/bin/cli.js -a 0.0.0.0 -p 8000 public"
+    "start": "node index.js"
   },
   "dependencies": {
     "@google-cloud/storage": "^0.7.0",

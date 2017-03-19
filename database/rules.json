@@ -45,6 +45,18 @@
               ".validate": "newData.isNumber() && newData.val() > 0"
             },
 
+            "snippetId": {
+              ".validate": "newData.isString()"
+            },
+
+            "packageId": {
+              ".validate": "newData.isString()"
+            },
+
+            "userId": {
+              ".validate": "newData.isString()"
+            },
+
             "$else": {
               ".validate": false
             }

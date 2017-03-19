@@ -6,9 +6,25 @@ This is a backend process for compiling elm projects given a template zip file a
 
 This section assumes you have created a firebase project created.
 
+### Tooling
+
+```
+$ npm install -g yarn
+$ yarn global add firebase-tools
+```
+
+## Creating your database
+
+```
+$ firebase login
+$ firebase init
+$ firebase deploy --only database
+$ yarn db:seed
+```
+
 ### Configuration files
 
- 1. Copy `config/services/firebase.example.json` to `config/services/firebase.json` and fill in your firebase information
+ 1. Copy `config/services/firebase.example.json` to `config/services/firebase.json` and fill in your firebase information (Overview > Add Firebase to your web app)
  2. Create a service account json file from your firebase project permissions page. Copy that file into `config/services/serviceAccount.json`.
 
 ### Prepping firebase
