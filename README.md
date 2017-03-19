@@ -30,3 +30,14 @@ $ yarn db:seed
 ### Prepping firebase
 
  1. `yarn db:seed` will completely clear your database and storage, and create an initial core package. Do not run this if this is your production server and there is data!
+
+
+## Running
+
+```
+$ # Run everything
+$ yarn start
+
+$ # Run just the worker
+$ yarn worker
+```
