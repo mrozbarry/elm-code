@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^0.7.0",
+    "cross-spawn": "^5.1.0",
     "elm": "^0.18.0",
+    "elm-github-install": "^0.3.1",
     "express": "^4.15.2",
     "extract-zip": "^1.6.0",
     "firebase": "^3.7.0",
@@ -20,6 +22,7 @@
     "firebase-queue": "^1.6.1",
     "node-elm-compiler": "^4.3.0",
     "node-static": "^0.7.9",
+    "promise": "^7.1.1",
     "rimraf": "^2.6.1",
     "temp": "^0.8.3"
   }
