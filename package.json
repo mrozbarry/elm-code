@@ -8,22 +8,18 @@
   "scripts": {
     "worker": "node lib/workers/worker.js",
     "db:seed": "node database/seed.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "postinstall": "npm rebuild node-sass && gulp sass"
   },
   "dependencies": {
-    "@google-cloud/storage": "^0.7.0",
-    "cross-spawn": "^5.1.0",
-    "elm": "^0.18.0",
-    "elm-github-install": "^0.3.1",
     "express": "^4.15.2",
-    "extract-zip": "^1.6.0",
     "firebase": "^3.7.0",
-    "firebase-admin": "^4.1.3",
-    "firebase-queue": "^1.6.1",
-    "node-elm-compiler": "^4.3.0",
-    "node-static": "^0.7.9",
-    "promise": "^7.1.1",
-    "rimraf": "^2.6.1",
-    "temp": "^0.8.3"
+    "gulp": "^3.9.1",
+    "gulp-sass": "^3.1.0",
+    "node-sass": "^4.5.0",
+    "pug": "^2.0.0-beta11"
+  },
+  "devDependencies": {
+    "node-sass-middleware": "^0.11.0"
   }
 }
