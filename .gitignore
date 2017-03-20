@@ -1,5 +1,6 @@
 node_modules
 config/services/firebase.json
 config/services/serviceAccount.json
+public/firebase.json
 firebase.json
 .firebaserc
