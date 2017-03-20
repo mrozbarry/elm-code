@@ -116,12 +116,14 @@ function createDemoSnippet(userId, packageId) {
 }
 
 function createTask (userId, snippetId, packageId) {
-  const ref = database.ref("compile-queue").child("tasks").child(snippetId)
+  const ref = database.ref("compile-job").child(snippetId)
 
   ref.set({
     snippetId: snippetId,
     packageId: packageId,
-    userId: userId
+    userId: userId,
+    state: "queued",
+    progress: 0
   })
 }
 
