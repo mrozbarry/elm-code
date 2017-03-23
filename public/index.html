@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Elm Code</title>
+    <link rel="stylesheet" href="/assets/application.css" />
+    <link rel="stylesheet" href="/assets/main.css" />
+    <script type="text/javascript" src="https://www.gstatic.com/firebasejs/3.6.9/firebase.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/superagent/3.5.1/superagent.min.js"></script>
+  </head>
+  <body>
+    <h1 class="heading">Elm Code Live Statistics</h1>
+
+    <h2 class="heading">Workers</h2>
+
+    <div id="elm-app"></div>
+
+    <script type="text/javascript" src="/assets/worker-status.js"></script>
+    <script type="text/javascript">
+      superagent
+        .get("/firebase.json")
+        .end(function (err, response) {
+          Elm.WorkerStatus.embed(
+            document.getElementById("elm-app"),
+            {
+              firebaseApiKey: response.body.apiKey,
+              firebaseDatabaseURL: response.body.databaseURL
+            }
+          )
+        })
+    </script>
+  </body>
+</html>
