@@ -3,7 +3,7 @@ const storage = require("@google-cloud/storage")
 
 const firebase = require("firebase-admin")
 const serviceAccount = require("../services/serviceAccount.json")
-const config = require("../services/firebase.json")
+const config = require("../../public/firebase.json")
 
 const options = {
   credential: firebase.credential.cert(serviceAccount),
