@@ -1,4 +1,5 @@
 const path = require("path")
+const fs = require("fs")
 const temp = require("temp")
 const Promise = require("promise")
 const spawn = require("cross-spawn")
@@ -7,6 +8,8 @@ const elm = require("node-elm-compiler")
 const functions = require("firebase-functions")
 const gcs = require("@google-cloud/storage")()
 const admin = require("firebase-admin")
+
+const bucket = gcs.bucket("elm-source.appspot.com")
 
 admin.initializeApp(functions.config().firebase)
 
@@ -17,7 +20,7 @@ exports.compileProject = functions.database.ref("/compile-jobs/{snippetId}")
       return
     }
     // Early exit if there is a data mismatch
-    if (event.data.key() != event.params.snippetId) {
+    if (event.data.key != event.params.snippetId) {
       return
     }
 
@@ -32,32 +35,36 @@ exports.compileProject = functions.database.ref("/compile-jobs/{snippetId}")
             state: state,
             progress: percentage
           })
-          .then(resolve)
-          .catch(reject)
+          .then(function () {
+            resolve(context)
+          })
+          .catch(function () {
+            reject("Unable to set state (" + state + ", " + percentage + ")")
+          })
       })
     }
 
-    var validateUser = function () {
+    var validateUser = function (context) {
       return new Promise(function (resolve, reject) {
-        firebase
+        admin
           .database()
           .ref("users")
-          .child(data.userId)
+          .child(job.userId)
           .once("value", function (snapshot) {
             const user = snapshot.val()
             if (user && !user.isBanned) {
-              resolve()
+              resolve(context)
             } else {
               console.error("User either doesn't exist or is banned from compiling code.")
-              reject()
+              reject("Unable to validate user")
             }
           })
       })
     }
 
-    var tempContainer = function () {
+    var tempContainer = function (context) {
       return new Promise(function (resolve, reject) {
-        temp.mkdir(data.snippetId, function (err, fullPath) {
+        temp.mkdir(job.snippetId, function (err, fullPath) {
           if (err) {
             reject("Unable to create temporary root:", err)
           } else {
@@ -69,52 +76,54 @@ exports.compileProject = functions.database.ref("/compile-jobs/{snippetId}")
 
     var downloadPackageJson = function (context) {
       return new Promise(function (resolve, reject) {
-        gcs
-          .file("packages/" + data.packageId + "/elm-package.json")
+        bucket
+          .file("packages/" + job.packageId + "/elm-package.json")
           .download({
             destination: path.resolve(context.fullPath, "elm-package.json")
           }).then(function () {
             resolve(context)
           }).catch(function (e) {
             console.error("Unable to download package json")
-            reject(e)
+            reject("Unable to get elm-package.json")
           })
       })
     }
 
     var downloadMain = function (context) {
       return new Promise(function (resolve, reject) {
-        gcs
-          .file("snippets/" + data.snippetId + "/Main.elm")
+        bucket
+          .file("snippets/" + job.snippetId + "/Main.elm")
           .download({
             destination: path.resolve(context.fullPath, "Main.elm")
           }).then(function () {
             resolve(context)
           }).catch(function (e) {
             console.error("Unable to download main elm")
-            reject(e)
+            reject("Unable to get elm source file")
           })
       })
     }
 
-    var elmGithubInstall = function (context) {
+    var elmPackageInstall = function (context) {
+      const elmPackageInstallBin = path.resolve(__dirname, "node_modules", ".bin", "elm-proper-install")
+      console.log("elmPackageInstall", elmPackageInstallBin)
       return new Promise(function (resolve, reject) {
         spawn(
-          path.resolve(__dirname, "..", "..", "node_modules", ".bin", "elm-github-install"),
+          elmPackageInstallBin,
           [],
           {
             cwd: context.fullPath
           }
         ).on("close", function (code) {
           if (code != 0) {
-            console.error("Runtime error with elm-github-install:", { errorCode: code })
-            reject()
+            console.error("Runtime error while installing elm packages:", elmPackageInstallBin, { errorCode: code })
+            reject("Elm github install failed")
           } else {
             resolve(context)
           }
         }).on("error", function (e) {
-          console.error("Unable to run elm-github-install:", e)
-          reject(e)
+          console.error("Unable to run elm package installer:", elmPackageInstallBin, e)
+          reject("Unable to install packages")
         })
       })
     }
@@ -128,58 +137,59 @@ exports.compileProject = functions.database.ref("/compile-jobs/{snippetId}")
         }).on("close", function (code) {
           if (code != 0) {
             console.error("Runtime error with elm-make:", { errorCode: code })
-            reject()
+            reject("Compile failed, elm-make returned an error")
           } else {
             resolve(context)
           }
         }).on("error", function (e) {
           console.error("Unable to run elm-make:", e)
-          reject(e)
+          reject("Elm-make failed to execute")
         })
       })
     }
 
     var uploadResult = function (context) {
       return new Promise(function (resolve, reject) {
-        gcs.upload(path.resolve(context.fullPath, "main.js"), {
-          destination: "snippets/" + data.snippetId + "/main.js"
-        }).then(function () {
-          resolve(context)
-        }).catch(function (err) {
-          console.error("Unable to upload result:", err)
-          reject(err)
-        })
+        bucket
+          .upload(path.resolve(context.fullPath, "main.js"), {
+            destination: "snippets/" + job.snippetId + "/main.js"
+          }).then(function () {
+            resolve(context)
+          }).catch(function (err) {
+            console.error("Unable to upload result:", err)
+            reject("Unable to upload compiled elm script")
+          })
       })
     }
 
     var updateSnippet = function (context) {
       return new Promise(function (resolve, reject) {
-        firebase
+        admin
           .database()
           .ref("snippets")
-          .child(data.snippetId)
+          .child(job.snippetId)
           .update({ compiledAt: Date.now(), updatedAt: Date.now() })
           .then(function () {
             resolve(context)
           })
           .catch(function (e) {
             console.error("Couldn't update snippet:", e)
-            reject(e)
+            reject("Unable to update the snippet")
           })
       })
     }
 
-    return setState.bind(this, "begin", 0)
+    return setState("begin", 0, null)
       .then(validateUser)
-      .then(setState.bind(this, "sync", 10))
-      .then(tempContainer)
       .then(setState.bind(this, "sync", 5))
-      .then(downloadPackageJson)
+      .then(tempContainer)
       .then(setState.bind(this, "sync", 10))
-      .then(downloadMain)
+      .then(downloadPackageJson)
       .then(setState.bind(this, "sync", 15))
-      .then(elmGithubInstall)
-      .then(setState.bind(this, "packages", 20))
+      .then(downloadMain)
+      .then(setState.bind(this, "sync", 20))
+      .then(elmPackageInstall)
+      .then(setState.bind(this, "packages", 30))
       .then(compile)
       .then(setState.bind(this, "compile", 90))
       .then(uploadResult)
@@ -189,12 +199,12 @@ exports.compileProject = functions.database.ref("/compile-jobs/{snippetId}")
         return new Promise(function (resolve, reject) {
           jobRef
             .remove()
-            .then(resolve)
-            .catch(reject)
+          resolve("end")
         })
       })
       .catch(function (e) {
+        console.error(e)
         jobRef
-          .update({ state: "error", error: JSON.stringify(e) })
+          .update({ state: "error", error: e })
       })
 })
