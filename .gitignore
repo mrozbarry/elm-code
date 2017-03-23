@@ -2,5 +2,6 @@ node_modules
 config/services/firebase.json
 config/services/serviceAccount.json
 public/firebase.json
+elm-stuff
 firebase.json
 .firebaserc
