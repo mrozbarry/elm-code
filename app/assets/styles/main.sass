@@ -1,0 +1,21 @@
+@import "base/variables.sass"
+
+body
+  background: lighten($primary-color, 5%)
+  background: -webkit-linear-gradient(to left, lighten($primary-color, 5%), lighten($secondary-color, 5%))
+  background: linear-gradient(to left, lighten($primary-color, 5%), lighten($secondary-color, 5%))
+
+  color: white
+
+
+.progress
+  width: 100%
+  height: 3px
+  background-color: rgba(100, 100, 100, 0.3)
+  border-left: 1px white solid
+  border-right: 1px white solid
+
+  &-bar
+    height: 100%
+    background-color: $accent-color
+    border-right: 2px rgba(255, 255, 255, 0.7) solid
