@@ -116,7 +116,7 @@ function createDemoSnippet(userId, packageId) {
 }
 
 function createTask (userId, snippetId, packageId) {
-  const ref = database.ref("compile-job").child(snippetId)
+  const ref = database.ref("compile-jobs").child(snippetId)
 
   ref.set({
     snippetId: snippetId,

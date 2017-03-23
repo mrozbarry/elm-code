@@ -1,8 +1,9 @@
 {
   "rules": {
+    ".read": true,
+
     "compile-jobs": {
       "$jobId": {
-        ".read": "auth.uid == data.child('userId').val() || auth.token.isAdmin === true",
         ".write": "auth != null",
 
         "progress": {
@@ -14,7 +15,7 @@
         },
 
         "error": {
-          ".validate": "newData.isString()"
+          ".validate": true
         },
 
         "snippetId": {
@@ -37,7 +38,6 @@
 
     "users": {
       "$userId": {
-        ".read": true,
         ".indexOn": ["createdAt", "isBanned", "snippetCount"],
 
         "createdAt": {
@@ -70,7 +70,6 @@
 
     "snippets": {
       "$snippetId": {
-        ".read": "data.child('isPublic').val() === true || data.child('userId').val() == auth.uid",
         ".write": "data.val() == null || data.child('userId').val() == auth.uid",
         ".indexOn": ["userId", "clonedFromId", "packageTemplate", "createdAt", "updatedAt"],
 
@@ -122,7 +121,6 @@
 
     "packages": {
       "$packageId": {
-        ".read": true,
         ".write": "auth.token.isAdmin === true",
 
         "name": {
