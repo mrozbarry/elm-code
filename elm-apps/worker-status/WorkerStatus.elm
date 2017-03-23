@@ -1,10 +1,14 @@
-module Main exposing (..)
+module WorkerStatus exposing (..)
 
 import Html exposing (Html, div, text, h3)
+import Html.Attributes exposing (class, style)
 import Dict exposing (Dict)
 import Task exposing (Task)
-import FirebaseConfig
+import Json.Decode
 import Firebase
+import Firebase.Errors exposing (Error)
+import Firebase.Authentication
+import Firebase.Authentication.Types exposing (Auth, User)
 import Firebase.Database
 import Firebase.Database.Types exposing (Database, Reference, Query, Snapshot)
 import Firebase.Database.Reference
@@ -37,7 +41,7 @@ type alias Flags =
 type alias Model =
     { app : Firebase.App
     , jobs : List Job
-    , query : Query
+    , isSignedIn : Bool
     }
 
 
@@ -45,7 +49,7 @@ type alias Job =
     { snippetId : String
     , packageId : String
     , userId : String
-    , percentage : Maybe Float
+    , progress : Maybe Float
     , state : Maybe String
     }
 
@@ -77,17 +81,10 @@ initialModel flags =
         database : Database
         database =
             Firebase.Database.init app
-
-        query : Query
-        query =
-            database
-                |> Firebase.Database.Reference.ref (Just "compile-jobs")
-                |> Firebase.Database.Reference.orderByKey
     in
         { app = app
-        , workerIds = flags.workerIds
-        , workerPercentages = Dict.empty
-        , query = query
+        , jobs = []
+        , isSignedIn = True
         }
 
 
@@ -109,24 +106,23 @@ update msg model =
                     let
                         decode : Json.Decode.Decoder (List Job)
                         decode =
-                            Json.map
+                            Json.Decode.map
                                 (List.map Tuple.second)
-                                Json.Decode.keyValuePairs
-                                decode
+                                (Json.Decode.keyValuePairs decodeJob)
 
                         decodeJob : Json.Decode.Decoder Job
                         decodeJob =
-                            Json.map5
+                            Json.Decode.map5
                                 Job
                                 (Json.Decode.field "snippetId" Json.Decode.string)
                                 (Json.Decode.field "packageId" Json.Decode.string)
                                 (Json.Decode.field "userId" Json.Decode.string)
-                                (Json.Decode.field "percentage" (Json.Decode.maybe Json.Decode.float))
+                                (Json.Decode.field "progress" (Json.Decode.maybe Json.Decode.float))
                                 (Json.Decode.field "state" (Json.Decode.maybe Json.Decode.string))
                     in
                         snapshot
                             |> Firebase.Database.Snapshot.value
-                            |> Json.Decode decode
+                            |> Json.Decode.decodeValue decode
             in
                 case decodeJobs of
                     Ok jobs ->
@@ -135,13 +131,9 @@ update msg model =
                         )
 
                     Err msg ->
-                        let
-                            _ =
-                                Debug.log "TaskUpdated" decodeJob
-                        in
-                            ( model
-                            , Cmd.none
-                            )
+                        ( model
+                        , Cmd.none
+                        )
 
 
 
@@ -151,12 +143,45 @@ view : Model -> Html Msg
 view model =
     div
         []
-        [ text "WorkerStatus"
-        ]
+        (List.map viewFunction model.jobs)
+
+viewFunction : Job -> Html Msg
+viewFunction job =
+    let
+        progress : Float
+        progress =
+            Maybe.withDefault 0.0 job.progress
+    in
+        div
+            []
+            [ h3 [] [ text job.snippetId ]
+            , div
+                [ class "progress" ]
+                [ div
+                    [ class "progress-bar"
+                    , style
+                        [ ( "width", (toString progress) ++ "%" )
+                        ]
+                    ]
+                    []
+                ]
+            ]
 
 -- Subscriptions
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    let
+        jobReference : Reference
+        jobReference =
+            model.app
+                |> Firebase.Database.init
+                |> Firebase.Database.ref (Just "compile-jobs")
+    in
+        if model.isSignedIn == True then
+            Firebase.Database.Reference.on "value" jobReference TasksUpdated
+                |> Debug.log "doing sub"
+        else
+            Sub.none
+                |> Debug.log "ignoring sub"
