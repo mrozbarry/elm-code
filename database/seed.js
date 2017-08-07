@@ -3,12 +3,15 @@ const firebase = require("../config/initializers/firebase.js")
 
 const database = firebase.database()
 const bucket = firebase.storage()
+const storageBucketName = require("../public/firebase.json").storageBucket
 
 database
   .ref()
   .remove()
   .then(function () {
     bucket.deleteFiles().then(function () {
+      createElmPackageConfig()
+
       const package = createStandardPackage(
         require("./seed/standard/elm-package.json")
       )
@@ -30,6 +33,31 @@ database
   })
 
 
+function createElmPackageConfig () {
+  database
+    .ref("elm")
+    .update({
+      version: require("../functions/node_modules/elm/package.json").version,
+      packages: {
+        "elm-lang": {
+          core: {
+            v5: {
+              bucket: storageBucketName,
+              syncedToVersion: "",
+              state: "new"
+            }
+          },
+          html: {
+            v2: {
+              bucket: storageBucketName,
+              syncedToVersion: "",
+              state: "new"
+            }
+          }
+        }
+      }
+    })
+}
 
 
 function createStandardPackage (elmPackage) {
@@ -92,7 +120,7 @@ function createDemoSnippet(userId, packageId) {
     title: "Demo seed snippet",
     attribution: "[Elm-Canvas](https://github.com/Elm-Canvas)",
     description: "Just a demo snippet to test that the system works",
-    isPublic: true,
+    debugMode: false,
     createdAt: Date.now(),
     updatedAt: Date.now()
   }).then(function () {
@@ -123,7 +151,8 @@ function createTask (userId, snippetId, packageId) {
     packageId: packageId,
     userId: userId,
     state: "queued",
-    progress: 0
+    progress: 0,
+    bucket: require("../public/firebase.json").storageBucket
   })
 }
 

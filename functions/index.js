@@ -9,7 +9,6 @@ const functions = require("firebase-functions")
 const gcs = require("@google-cloud/storage")()
 const admin = require("firebase-admin")
 
-const bucket = gcs.bucket("elm-source.appspot.com")
 
 admin.initializeApp(functions.config().firebase)
 
@@ -27,6 +26,8 @@ exports.compileProject = functions.database.ref("/compile-jobs/{snippetId}")
     const job = event.data.val()
 
     const jobRef = admin.database().ref("compile-jobs").child(event.params.snippetId)
+
+    const bucket = gcs.bucket(job.bucket)
 
     var setState = function (state, percentage, context) {
       return new Promise(function (resolve, reject) {

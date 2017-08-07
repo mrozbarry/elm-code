@@ -101,7 +101,7 @@
           ".validate": "newData.isNumber() && (newData.val() === now || data.val() == newData.val())"
         },
 
-        "isPublic": {
+        "debugMode": {
           ".validate": "newData.isBoolean()"
         },
 
